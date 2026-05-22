@@ -1,4 +1,11 @@
-import { IsDefined, IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsDefined,
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 
 export class LoginDto {
   @IsDefined()
@@ -9,5 +16,7 @@ export class LoginDto {
   @IsDefined()
   @IsString()
   @IsNotEmpty()
+  @MinLength(8)
+  @MaxLength(128)
   password!: string;
 }
