@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Min,
 } from 'class-validator';
@@ -33,18 +34,18 @@ export class CreateUserDto {
   @IsNotEmpty()
   lastName!: string;
 
-  @IsDefined()
+  @IsOptional()
   @IsString()
   avatar?: string;
 
-  @IsDefined()
+  @IsOptional()
   @IsString()
   bio?: string;
 
-  @IsDefined()
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  status!: string;
+  status?: string;
 
   @IsDefined()
   @IsInt()
