@@ -2,20 +2,25 @@ import {
   ConflictException,
   Injectable,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, MoreThan, Repository } from 'typeorm';
 import { createHash, randomBytes } from 'node:crypto';
 import { instanceToPlain } from 'class-transformer';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { RolesService } from '../roles/roles.service';
+import { MailService } from '../mail/mail.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { SessionsService } from './sessions.service';
 
 @Injectable()
@@ -27,8 +32,11 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly rolesService: RolesService,
     private readonly sessionsService: SessionsService,
+    private readonly mailService: MailService,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepo: Repository<RefreshToken>,
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepo: Repository<PasswordResetToken>,
   ) {}
 
   async register(
@@ -190,6 +198,70 @@ export class AuthService {
       .execute();
 
     await this.sessionsService.expireAllExcept(userId, currentSessionId);
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    const email = forgotPasswordDto.email;
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      return;
+    }
+
+    await this.passwordResetTokenRepo.update(
+      { email, usedAt: IsNull() },
+      { usedAt: new Date() },
+    );
+
+    const tokenStr = randomBytes(32).toString('hex');
+    const hashedToken = createHash('sha256').update(tokenStr).digest('hex');
+
+    await this.passwordResetTokenRepo.save({
+      email,
+      token: hashedToken,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    });
+
+    await this.mailService.sendPasswordResetEmail(email, tokenStr);
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
+    const hashedToken = createHash('sha256')
+      .update(resetPasswordDto.token)
+      .digest('hex');
+
+    const tokenEntity = await this.passwordResetTokenRepo.findOne({
+      where: {
+        token: hashedToken,
+        usedAt: IsNull(),
+        expiresAt: MoreThan(new Date()),
+      },
+    });
+
+    if (!tokenEntity) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const user = await this.usersService.findByEmail(tokenEntity.email);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
+
+    await this.usersService.update(user.id, { password: hashedPassword });
+
+    await this.passwordResetTokenRepo.update(tokenEntity.id, {
+      usedAt: new Date(),
+    });
+
+    await this.refreshTokenRepo.update(
+      { userId: user.id, revokedAt: IsNull() },
+      { revokedAt: new Date() },
+    );
+
+    await this.sessionsService.expireAllExcept(user.id, -1);
   }
 
   private async generateTokens(
