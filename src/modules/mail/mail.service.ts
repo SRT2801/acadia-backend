@@ -61,14 +61,14 @@ export class MailService {
         this.logger.log(`Password reset email sent to ${to}`);
       } catch (error) {
         this.logger.error(
-          `Failed to send password reset email to ${to}`,
-          error,
+          `Failed to send email to ${to} — falling back to console log`,
+          error instanceof Error ? error.message : error,
         );
-        throw error;
+        this.logger.log(`[EMAIL FALLBACK TO ${to}] Reset URL: ${resetUrl}`);
       }
-    } else {
-      this.logger.log(`[EMAIL TO ${to}] Subject: Recuperación de contraseña`);
-      this.logger.log(`[EMAIL BODY] Reset URL: ${resetUrl}`);
+      return;
     }
+
+    this.logger.log(`[EMAIL TO ${to}] Reset URL: ${resetUrl}`);
   }
 }
