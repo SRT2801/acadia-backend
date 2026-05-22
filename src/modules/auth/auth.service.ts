@@ -34,6 +34,7 @@ export class AuthService {
       ...registerDto,
       password: hashedPassword,
       status: registerDto.status ?? 'ACTIVE',
+      roleId: 1, // ID por defecto para "STUDENT" - Evita el Role Hijacking
     });
 
     return this.buildAuthResponse(user);
@@ -59,11 +60,9 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
-  private async buildAuthResponse(
-    user: Partial<User> & Omit<User, 'password'>,
-  ) {
+  private async buildAuthResponse(user: User) {
     const payload: JwtPayload = {
-      sub: user.id ?? 0,
+      userId: user.id ?? 0,
       email: user.email ?? '',
       roleId: user.roleId ?? 0,
       universityId: user.universityId ?? 0,
@@ -75,12 +74,7 @@ export class AuthService {
 
     return {
       accessToken: await this.jwtService.signAsync(payload),
-      user: { ...this.sanitizeUser(user), permissions },
+      user: { ...user, permissions },
     };
-  }
-
-  private sanitizeUser(user: Partial<User> & Omit<User, 'password'>) {
-    const { password, ...safeUser } = user as any;
-    return safeUser;
   }
 }
