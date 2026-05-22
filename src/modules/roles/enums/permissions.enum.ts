@@ -1,0 +1,9 @@
+export enum PermissionsEnum {
+  CREATE_TASK = 'CREATE_TASK',
+  DELETE_TASK = 'DELETE_TASK',
+  MANAGE_COURSE = 'MANAGE_COURSE',
+  SEND_ANNOUNCEMENT = 'SEND_ANNOUNCEMENT',
+  GRADE_SUBMISSION = 'GRADE_SUBMISSION',
+}
+
+export const ALL_PERMISSIONS = Object.values(PermissionsEnum);
