@@ -11,8 +11,6 @@ import { buildTypeOrmOptions } from '../config/typeorm.config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService): TypeOrmModuleOptions => {
-        // En vez de process.env nativo, pasamos un objeto simulado o
-        // podríamos mapear configService.get() a buildTypeOrmOptions
         const envConfig = {
           DB_HOST: configService.get<string>('DB_HOST'),
           DB_PORT: configService.get<string>('DB_PORT'),
