@@ -6,6 +6,8 @@ import {
   IsOptional,
   IsString,
   Min,
+  MinLength,
+  MaxLength,
 } from 'class-validator';
 
 export class RegisterDto {
@@ -22,6 +24,8 @@ export class RegisterDto {
   @IsDefined()
   @IsString()
   @IsNotEmpty()
+  @MinLength(8)
+  @MaxLength(128)
   password!: string;
 
   @IsDefined()
@@ -46,11 +50,6 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty()
   status?: string;
-
-  @IsDefined()
-  @IsInt()
-  @Min(1)
-  roleId!: number;
 
   @IsDefined()
   @IsInt()
