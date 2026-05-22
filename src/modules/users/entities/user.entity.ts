@@ -9,22 +9,22 @@ import {
 @Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn()
-  id?: number;
+  id!: number;
 
   @Column({ unique: true })
-  email?: string;
+  email!: string;
 
   @Column({ unique: true })
-  username?: string;
+  username!: string;
 
   @Column()
-  password?: string;
+  password!: string;
 
   @Column()
-  firstName?: string;
+  firstName!: string;
 
   @Column()
-  lastName?: string;
+  lastName!: string;
 
   @Column({ nullable: true })
   avatar?: string;
@@ -36,14 +36,14 @@ export class User {
   status?: string;
 
   @Column({ type: 'int' })
-  roleId?: number;
+  roleId!: number;
 
   @Column({ type: 'int' })
-  universityId?: number;
+  universityId!: number;
 
   @CreateDateColumn()
-  createdAt?: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt?: Date;
+  updatedAt!: Date;
 }
