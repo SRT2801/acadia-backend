@@ -35,7 +35,7 @@ export class RolesService {
       where: { roleId },
       relations: ['permission'],
     });
-    return rps.map((rp) => rp.permission?.name).filter(Boolean) as string[];
+    return rps.map((rp) => rp.permission?.name).filter(Boolean);
   }
 
   async assignPermissions(roleId: number, permissionIds: number[]) {
@@ -52,7 +52,7 @@ export class RolesService {
         );
       }
     }
-    return this.getPermissionsForRole(role.id as number);
+    return this.getPermissionsForRole(role.id);
   }
 
   async removePermission(roleId: number, permissionId: number) {
