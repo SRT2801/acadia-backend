@@ -3,4 +3,5 @@ export interface JwtPayload {
   email: string;
   roleId: number;
   universityId: number;
+  sessionId: number;
 }

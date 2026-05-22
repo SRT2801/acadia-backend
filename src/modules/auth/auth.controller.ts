@@ -1,17 +1,23 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Post,
   Req,
   Res,
   UseGuards,
+  ParseIntPipe,
+  Param,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
+
+const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000;
+const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 @Controller('auth')
 export class AuthController {
@@ -20,26 +26,62 @@ export class AuthController {
   @Post('register')
   async register(
     @Body() registerDto: RegisterDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { accessToken, user } = await this.authService.register(registerDto);
-    this.setCookie(res, accessToken);
+    const ipAddress = req.ip;
+    const userAgent = req.headers['user-agent'];
+    const { accessToken, refreshToken, user } = await this.authService.register(
+      registerDto,
+      ipAddress,
+      userAgent,
+    );
+    this.setAuthCookies(res, accessToken, refreshToken);
     return { user };
   }
 
   @Post('login')
   async login(
     @Body() loginDto: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { accessToken, user } = await this.authService.login(loginDto);
-    this.setCookie(res, accessToken);
+    const ipAddress = req.ip;
+    const userAgent = req.headers['user-agent'];
+    const { accessToken, refreshToken, user } = await this.authService.login(
+      loginDto,
+      ipAddress,
+      userAgent,
+    );
+    this.setAuthCookies(res, accessToken, refreshToken);
     return { user };
   }
 
+  @Post('refresh')
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshTokenCookie = req.cookies?.refreshToken;
+
+    if (!refreshTokenCookie) {
+      return res.status(401).json({ message: 'Refresh token not provided' });
+    }
+
+    const { accessToken, refreshToken, user } =
+      await this.authService.refresh(refreshTokenCookie);
+    this.setAuthCookies(res, accessToken, refreshToken);
+    return { user };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('logout')
-  logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const user = req['user'];
+    const refreshTokenCookie = req.cookies?.refreshToken;
+    await this.authService.logout(user.sessionId, refreshTokenCookie);
     res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
     return { message: 'Logged out successfully' };
   }
 
@@ -49,12 +91,50 @@ export class AuthController {
     return req['user'];
   }
 
-  private setCookie(res: Response, token: string) {
-    res.cookie('accessToken', token, {
+  @UseGuards(JwtAuthGuard)
+  @Get('sessions')
+  async getSessions(@Req() req: Request) {
+    const user = req['user'];
+    return this.authService.getActiveSessions(user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('sessions/:id')
+  async revokeSession(
+    @Req() req: Request,
+    @Param('id', ParseIntPipe) sessionId: number,
+  ) {
+    const user = req['user'];
+    await this.authService.revokeSession(sessionId, user.userId);
+    return { message: 'Session revoked' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('sessions')
+  async revokeOtherSessions(@Req() req: Request) {
+    const user = req['user'];
+    await this.authService.revokeOtherSessions(user.userId, user.sessionId);
+    return { message: 'Other sessions revoked' };
+  }
+
+  private setAuthCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ) {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      sameSite: 'strict' as const,
+    };
+    res.cookie('accessToken', accessToken, {
+      ...cookieOptions,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
+    });
+    res.cookie('refreshToken', refreshToken, {
+      ...cookieOptions,
+      path: '/auth',
+      maxAge: REFRESH_TOKEN_MAX_AGE,
     });
   }
 }
