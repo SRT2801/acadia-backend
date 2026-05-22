@@ -18,19 +18,16 @@ export class UsersService {
       status: createUserDto.status ?? 'ACTIVE',
     });
 
-    return this.sanitizeUser(await this.usersRepository.save(user));
+    return await this.usersRepository.save(user);
   }
 
   async findAll() {
-    return (await this.usersRepository.find()).map((user) =>
-      this.sanitizeUser(user),
-    );
+    return await this.usersRepository.find();
   }
 
   async findOne(id: number) {
     const user = await this.usersRepository.findOneBy({ id });
-
-    return user ? this.sanitizeUser(user) : undefined;
+    return user ? user : undefined;
   }
 
   async findByEmail(email: string) {
@@ -45,21 +42,11 @@ export class UsersService {
     }
 
     const updatedUser = this.usersRepository.merge(user, updateUserDto);
-    return this.sanitizeUser(await this.usersRepository.save(updatedUser));
+    return await this.usersRepository.save(updatedUser);
   }
 
   async remove(id: number) {
     const result = await this.usersRepository.delete(id);
-
-    if (!result.affected) {
-      return false;
-    }
-
-    return true;
-  }
-
-  private sanitizeUser(user: User) {
-    const { password, ...safeUser } = user;
-    return safeUser;
+    return !!result.affected;
   }
 }
