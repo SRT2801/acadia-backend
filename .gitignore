@@ -48,6 +48,9 @@ lerna-debug.log*
 
 # Runtime data
 pids
+
+# Docker local overrides
+docker-compose.yml
 *.pid
 *.seed
 *.pid.lock
