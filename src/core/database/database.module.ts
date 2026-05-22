@@ -18,9 +18,7 @@ import { buildTypeOrmOptions } from '../config/typeorm.config';
           DB_PASSWORD: configService.get<string>('DB_PASSWORD'),
           DB_DATABASE: configService.get<string>('DB_DATABASE'),
         };
-        return buildTypeOrmOptions(
-          envConfig as Record<string, string | undefined>,
-        ) as TypeOrmModuleOptions;
+        return buildTypeOrmOptions(envConfig);
       },
     }),
   ],
