@@ -34,7 +34,7 @@ export class AuthService {
       ...registerDto,
       password: hashedPassword,
       status: registerDto.status ?? 'ACTIVE',
-      roleId: 1, // ID por defecto para "STUDENT" - Evita el Role Hijacking
+      roleId: 1, 
     });
 
     return this.buildAuthResponse(user);
