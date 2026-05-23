@@ -43,6 +43,9 @@ export class User {
   @Column({ nullable: true })
   verificationToken?: string;
 
+  @Column({ nullable: true, type: 'timestamptz' })
+  verificationTokenExpiresAt?: Date;
+
   @Column({ type: 'int' })
   roleId!: number;
 
