@@ -16,7 +16,9 @@ export class MailService {
     const user = this.configService.get<string>('SMTP_USER');
     const pass = this.configService.get<string>('SMTP_PASS');
     this.fromEmail =
-      this.configService.get<string>('SMTP_FROM') ?? user ?? 'noreply@acadia.com';
+      this.configService.get<string>('SMTP_FROM') ??
+      user ??
+      'noreply@acadia.com';
     this.fromName =
       this.configService.get<string>('SMTP_FROM_NAME') ?? 'Acadia';
 
@@ -27,7 +29,9 @@ export class MailService {
         secure: port === 465,
         auth: { user, pass },
       });
-      this.logger.log(`Mail transporter configured: ${host}:${port} as ${user}`);
+      this.logger.log(
+        `Mail transporter configured: ${host}:${port} as ${user}`,
+      );
     } else {
       this.logger.warn(
         'SMTP not configured — emails will be logged to console',
@@ -65,10 +69,7 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(to: string, resetToken: string): Promise<void> {
-    const frontendUrl = this.configService.get<string>(
-      'FRONTEND_URL',
-      'http://localhost:4200',
-    );
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
     const resetUrl = `${frontendUrl}/auth/reset-password?token=${resetToken}`;
 
     const html = `
@@ -95,12 +96,12 @@ export class MailService {
     );
   }
 
-  async sendVerificationEmail(to: string, verificationToken: string): Promise<void> {
-    const frontendUrl = this.configService.get<string>(
-      'FRONTEND_URL',
-      'http://localhost:4200',
-    );
-    const verifyUrl = `${frontendUrl}/auth/verify-email?token=${verificationToken}`;
+  async sendVerificationEmail(
+    to: string,
+    verificationToken: string,
+  ): Promise<void> {
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
     const html = `
       <div style="font-family: 'Inter', Arial, sans-serif; max-width: 480px; margin: 0 auto; background: #0f0f0f; color: #e0e0e0; border-radius: 16px; overflow: hidden;">
