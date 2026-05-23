@@ -52,6 +52,14 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
+    const existingUsername = await this.usersService.findByUsername(
+      registerDto.username ?? '',
+    );
+
+    if (existingUsername) {
+      throw new ConflictException('Username already taken');
+    }
+
     const hashedPassword = await bcrypt.hash(registerDto.password ?? '', 10);
 
     const user = await this.usersService.create({
@@ -69,6 +77,7 @@ export class AuthService {
     await this.usersService.setVerificationToken(
       user.id,
       hashedVerificationToken,
+      new Date(Date.now() + 24 * 60 * 60 * 1000),
     );
 
     await this.mailService.sendVerificationEmail(email, verificationToken);
@@ -282,12 +291,17 @@ export class AuthService {
       .update(verifyEmailDto.token)
       .digest('hex');
 
-    const user = await this.usersService.findByVerificationToken(
-      hashedToken,
-    );
+    const user = await this.usersService.findByVerificationToken(hashedToken);
 
     if (!user) {
       throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    if (
+      user.verificationTokenExpiresAt &&
+      user.verificationTokenExpiresAt < new Date()
+    ) {
+      throw new BadRequestException('Verification token has expired');
     }
 
     await this.usersService.markEmailVerified(user.id);
