@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Controller,
   Get,
   Post,
@@ -25,7 +26,21 @@ export class UsersController {
 
   @Roles(RolesEnum.ADMIN)
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
+  async create(@Body() createUserDto: CreateUserDto) {
+    const existingEmail = await this.usersService.findByEmail(
+      createUserDto.email,
+    );
+    if (existingEmail) {
+      throw new ConflictException('Email already registered');
+    }
+
+    const existingUsername = await this.usersService.findByUsername(
+      createUserDto.username,
+    );
+    if (existingUsername) {
+      throw new ConflictException('Username already taken');
+    }
+
     return this.usersService.create(createUserDto);
   }
 
