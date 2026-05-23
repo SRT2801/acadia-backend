@@ -16,7 +16,7 @@ import { buildTypeOrmOptions } from '../config/typeorm.config';
           DB_PORT: configService.get<string>('DB_PORT'),
           DB_USERNAME: configService.get<string>('DB_USERNAME'),
           DB_PASSWORD: configService.get<string>('DB_PASSWORD'),
-          DB_DATABASE: configService.get<string>('DB_DATABASE'),
+          DB_NAME: configService.get<string>('DB_NAME'),
         };
         return buildTypeOrmOptions(envConfig);
       },
