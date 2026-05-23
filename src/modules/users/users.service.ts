@@ -48,10 +48,10 @@ export class UsersService {
   }
 
   async markEmailVerified(id: number) {
-    await this.usersRepository.update(id, {
-      emailVerifiedAt: new Date(),
-      verificationToken: null,
-    } as any);
+    const user = await this.usersRepository.findOneByOrFail({ id });
+    user.emailVerifiedAt = new Date();
+    user.verificationToken = null as any;
+    await this.usersRepository.save(user);
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
