@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -32,6 +32,26 @@ export class UsersService {
 
   async findByEmail(email: string) {
     return this.usersRepository.findOneBy({ email });
+  }
+
+  async findByVerificationToken(verificationToken: string) {
+    return this.usersRepository.findOneBy({
+      verificationToken,
+      emailVerifiedAt: IsNull(),
+    });
+  }
+
+  async setVerificationToken(id: number, token: string) {
+    await this.usersRepository.update(id, {
+      verificationToken: token,
+    });
+  }
+
+  async markEmailVerified(id: number) {
+    await this.usersRepository.update(id, {
+      emailVerifiedAt: new Date(),
+      verificationToken: null,
+    } as any);
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {

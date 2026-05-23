@@ -18,6 +18,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { AuthService } from './auth.service';
 
 const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000;
@@ -87,6 +88,13 @@ export class AuthController {
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
     return { message: 'Logged out successfully' };
+  }
+
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+    await this.authService.verifyEmail(verifyEmailDto);
+    return { message: 'Email verified successfully' };
   }
 
   @Post('forgot-password')

@@ -18,6 +18,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
@@ -59,6 +60,18 @@ export class AuthService {
       status: registerDto.status ?? 'ACTIVE',
       roleId: 1,
     });
+
+    const verificationToken = randomBytes(32).toString('hex');
+    const hashedVerificationToken = createHash('sha256')
+      .update(verificationToken)
+      .digest('hex');
+
+    await this.usersService.setVerificationToken(
+      user.id,
+      hashedVerificationToken,
+    );
+
+    await this.mailService.sendVerificationEmail(email, verificationToken);
 
     return this.generateTokens(user, ipAddress, userAgent);
   }
@@ -262,6 +275,22 @@ export class AuthService {
     );
 
     await this.sessionsService.expireAllExcept(user.id, -1);
+  }
+
+  async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<void> {
+    const hashedToken = createHash('sha256')
+      .update(verifyEmailDto.token)
+      .digest('hex');
+
+    const user = await this.usersService.findByVerificationToken(
+      hashedToken,
+    );
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    await this.usersService.markEmailVerified(user.id);
   }
 
   private async generateTokens(

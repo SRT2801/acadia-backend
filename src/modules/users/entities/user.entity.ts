@@ -37,6 +37,12 @@ export class User {
   @Column({ default: 'ACTIVE' })
   status?: string;
 
+  @Column({ nullable: true, type: 'timestamptz' })
+  emailVerifiedAt?: Date;
+
+  @Column({ nullable: true })
+  verificationToken?: string;
+
   @Column({ type: 'int' })
   roleId!: number;
 
