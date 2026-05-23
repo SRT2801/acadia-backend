@@ -1,6 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, QueryFailedError, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,7 +22,23 @@ export class UsersService {
       status: createUserDto.status ?? 'ACTIVE',
     });
 
-    return await this.usersRepository.save(user);
+    try {
+      return await this.usersRepository.save(user);
+    } catch (error) {
+      if (error instanceof QueryFailedError) {
+        const driverError = error.driverError;
+        if (driverError?.code === '23505') {
+          const detail = driverError.detail ?? '';
+          if (detail.includes('email')) {
+            throw new ConflictException('Email already registered');
+          }
+          if (detail.includes('username')) {
+            throw new ConflictException('Username already taken');
+          }
+        }
+      }
+      throw error;
+    }
   }
 
   async findAll() {
@@ -34,6 +54,10 @@ export class UsersService {
     return this.usersRepository.findOneBy({ email });
   }
 
+  async findByUsername(username: string) {
+    return this.usersRepository.findOneBy({ username });
+  }
+
   async findByVerificationToken(verificationToken: string) {
     return this.usersRepository.findOneBy({
       verificationToken,
@@ -41,9 +65,10 @@ export class UsersService {
     });
   }
 
-  async setVerificationToken(id: number, token: string) {
+  async setVerificationToken(id: number, token: string, expiresAt: Date) {
     await this.usersRepository.update(id, {
       verificationToken: token,
+      verificationTokenExpiresAt: expiresAt,
     });
   }
 
@@ -62,7 +87,24 @@ export class UsersService {
     }
 
     const updatedUser = this.usersRepository.merge(user, updateUserDto);
-    return await this.usersRepository.save(updatedUser);
+
+    try {
+      return await this.usersRepository.save(updatedUser);
+    } catch (error) {
+      if (error instanceof QueryFailedError) {
+        const driverError = error.driverError;
+        if (driverError?.code === '23505') {
+          const detail = driverError.detail ?? '';
+          if (detail.includes('email')) {
+            throw new ConflictException('Email already registered');
+          }
+          if (detail.includes('username')) {
+            throw new ConflictException('Username already taken');
+          }
+        }
+      }
+      throw error;
+    }
   }
 
   async remove(id: number) {
