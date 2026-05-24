@@ -1,11 +1,12 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, QueryFailedError, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import { University } from '../universities/entities/university.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -14,11 +15,31 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    @InjectRepository(University)
+    private readonly universitiesRepository: Repository<University>,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
+    let universityId = createUserDto.universityId;
+
+    if (!universityId) {
+      const domain = createUserDto.email.split('@')[1]?.toLowerCase();
+      const university = domain
+        ? await this.universitiesRepository.findOne({ where: { domain } })
+        : null;
+
+      if (university) {
+        universityId = university.id;
+      } else {
+        throw new BadRequestException(
+          'No pudimos detectar tu universidad. Por favor selecciónala.',
+        );
+      }
+    }
+
     const user = this.usersRepository.create({
       ...createUserDto,
+      universityId,
       status: createUserDto.status ?? 'ACTIVE',
     });
 
