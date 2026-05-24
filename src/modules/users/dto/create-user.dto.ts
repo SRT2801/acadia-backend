@@ -52,8 +52,8 @@ export class CreateUserDto {
   @Min(1)
   roleId!: number;
 
-  @IsDefined()
+  @IsOptional()
   @IsInt()
   @Min(1)
-  universityId!: number;
+  universityId?: number;
 }
