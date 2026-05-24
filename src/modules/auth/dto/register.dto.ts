@@ -51,8 +51,8 @@ export class RegisterDto {
   @IsNotEmpty()
   status?: string;
 
-  @IsDefined()
+  @IsOptional()
   @IsInt()
   @Min(1)
-  universityId!: number;
+  universityId?: number;
 }
