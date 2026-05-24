@@ -2,10 +2,13 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { University } from '../../universities/entities/university.entity';
 
 @Entity({ name: 'users' })
 export class User {
@@ -51,6 +54,10 @@ export class User {
 
   @Column({ type: 'int' })
   universityId!: number;
+
+  @ManyToOne(() => University)
+  @JoinColumn({ name: 'universityId' })
+  university?: University;
 
   @CreateDateColumn()
   createdAt!: Date;
