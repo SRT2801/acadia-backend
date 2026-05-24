@@ -103,7 +103,7 @@ describe('AuthService', () => {
 
     refreshTokenRepo = {
       findOne: jest.fn(),
-      update: jest.fn(),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
       save: jest.fn().mockImplementation((data) => ({ id: 2, ...data })),
     } as any;
 
@@ -245,7 +245,7 @@ describe('AuthService', () => {
       const result = await service.refresh('valid-token');
 
       expect(refreshTokenRepo.update).toHaveBeenCalledWith(
-        mockRefreshToken.id,
+        expect.objectContaining({ id: mockRefreshToken.id }),
         { revokedAt: expect.any(Date) },
       );
       expect(refreshTokenRepo.save).toHaveBeenCalled();

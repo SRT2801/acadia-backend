@@ -11,6 +11,7 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
@@ -73,7 +74,7 @@ export class AuthController {
     const refreshTokenCookie = req.cookies?.refreshToken;
 
     if (!refreshTokenCookie) {
-      return res.status(401).json({ message: 'Refresh token not provided' });
+      throw new UnauthorizedException('Refresh token not provided');
     }
 
     const { accessToken, refreshToken, user } =
@@ -88,8 +89,8 @@ export class AuthController {
     const user = req['user'];
     const refreshTokenCookie = req.cookies?.refreshToken;
     await this.authService.logout(user.sessionId, refreshTokenCookie);
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    res.clearCookie('accessToken', { path: '/' });
+    res.clearCookie('refreshToken', { path: '/auth' });
     return { message: 'Logged out successfully' };
   }
 

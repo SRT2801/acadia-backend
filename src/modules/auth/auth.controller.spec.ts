@@ -113,13 +113,13 @@ describe('AuthController', () => {
   });
 
   describe('refresh', () => {
-    it('should return 401 if no refresh token cookie', async () => {
+    it('should throw UnauthorizedException if no refresh token cookie', async () => {
       const req = mockReq({ cookies: {} });
       const res = mockRes();
 
-      await controller.refresh(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(401);
+      await expect(controller.refresh(req, res)).rejects.toThrow(
+        'Refresh token not provided',
+      );
     });
 
     it('should refresh tokens when cookie is present', async () => {

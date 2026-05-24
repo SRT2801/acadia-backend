@@ -134,25 +134,36 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    await this.refreshTokenRepo.update(tokenEntity.id, {
-      revokedAt: new Date(),
-    });
-
     await this.sessionsService.touch(session.id);
+
+    const { affected } = await this.refreshTokenRepo.update(
+      { id: tokenEntity.id, revokedAt: IsNull() },
+      { revokedAt: new Date() },
+    );
+
+    if (affected === 0) {
+      throw new UnauthorizedException('Refresh token already revoked');
+    }
 
     const newRefreshTokenStr = randomBytes(40).toString('hex');
     const newHashedToken = createHash('sha256')
       .update(newRefreshTokenStr)
       .digest('hex');
 
-    await this.refreshTokenRepo.save({
-      token: newHashedToken,
-      userId: user.id,
-      sessionId: session.id,
-      expiresAt: new Date(
-        Date.now() + this.refreshTokenExpiryDays * 24 * 60 * 60 * 1000,
-      ),
-    });
+    try {
+      await this.refreshTokenRepo.save({
+        token: newHashedToken,
+        userId: user.id,
+        sessionId: session.id,
+        expiresAt: new Date(
+          Date.now() + this.refreshTokenExpiryDays * 24 * 60 * 60 * 1000,
+        ),
+      });
+    } catch {
+      throw new UnauthorizedException(
+        'Refresh token conflict, please try again',
+      );
+    }
 
     const payload: JwtPayload = {
       userId: user.id,
