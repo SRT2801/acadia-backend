@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { UniversitiesModule } from './modules/universities/universities.module';
 import { DatabaseModule } from './core/database/database.module';
 import { MailModule } from './modules/mail/mail.module';
 
@@ -20,6 +21,7 @@ import { MailModule } from './modules/mail/mail.module';
     DatabaseModule,
     UsersModule,
     RolesModule,
+    UniversitiesModule,
     MailModule,
     AuthModule,
   ],
