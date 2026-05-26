@@ -49,17 +49,27 @@ async function seed() {
 
   // Define role -> permissions mapping (uses enums, not raw ids)
   const rolePermissionsMap: Record<RolesEnum, PermissionsEnum[]> = {
-    [RolesEnum.STUDENT]: [PermissionsEnum.CREATE_TASK],
+    [RolesEnum.STUDENT]: [
+      PermissionsEnum.CREATE_TASK,
+      PermissionsEnum.JOIN_COURSE,
+    ],
     [RolesEnum.PROFESSOR]: [
       PermissionsEnum.CREATE_TASK,
       PermissionsEnum.GRADE_SUBMISSION,
       PermissionsEnum.MANAGE_COURSE,
       PermissionsEnum.SEND_ANNOUNCEMENT,
+      PermissionsEnum.JOIN_COURSE,
+      PermissionsEnum.INVITE_MEMBERS,
+      PermissionsEnum.MANAGE_MEMBERS,
+      PermissionsEnum.CREATE_CHANNELS,
+      PermissionsEnum.DELETE_MESSAGES,
     ],
     [RolesEnum.ADMIN]: ALL_PERMISSIONS,
     [RolesEnum.MODERATOR]: [
       PermissionsEnum.DELETE_TASK,
       PermissionsEnum.SEND_ANNOUNCEMENT,
+      PermissionsEnum.JOIN_COURSE,
+      PermissionsEnum.DELETE_MESSAGES,
     ],
   };
 
