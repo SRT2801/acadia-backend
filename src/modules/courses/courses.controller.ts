@@ -12,6 +12,11 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { PermissionsEnum } from '../roles/enums/permissions.enum';
+import { CourseRoleGuard, RequireCourseRole } from './guards/course-role.guard';
+import { CourseMemberRole } from './enums/course-member-role.enum';
 import { CoursesService } from './courses.service';
 import { ChannelsService } from '../channels/channels.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -34,7 +39,8 @@ export class CoursesController {
 
   // ── Course CRUD ──────────────────────────────────────────────
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @RequirePermissions(PermissionsEnum.MANAGE_COURSE)
   @Post()
   async create(@Body() dto: CreateCourseDto, @Req() req: Request) {
     const userId = req['user']?.userId;
@@ -65,7 +71,8 @@ export class CoursesController {
     return { course };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -75,7 +82,8 @@ export class CoursesController {
     return { course };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER)
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.coursesService.remove(id);
@@ -91,7 +99,8 @@ export class CoursesController {
     return { space };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Patch(':id/space')
   async updateSpace(
     @Param('id', ParseIntPipe) id: number,
@@ -118,7 +127,8 @@ export class CoursesController {
     };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Post(':id/channels')
   async createChannel(
     @Param('id', ParseIntPipe) id: number,
@@ -135,7 +145,8 @@ export class CoursesController {
     return { channel };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Patch(':id/channels/:channelId')
   async updateChannel(
     @Param('id', ParseIntPipe) _courseId: number,
@@ -146,7 +157,8 @@ export class CoursesController {
     return { channel };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Delete(':id/channels/:channelId')
   async deleteChannel(
     @Param('id', ParseIntPipe) _courseId: number,
@@ -156,7 +168,8 @@ export class CoursesController {
     return { message: 'Channel deleted' };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Patch(':id/channels/reorder')
   async reorderChannels(
     @Param('id', ParseIntPipe) id: number,
@@ -169,7 +182,8 @@ export class CoursesController {
 
   // ── Categories ───────────────────────────────────────────────
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Post(':id/categories')
   async createCategory(
     @Param('id', ParseIntPipe) id: number,
@@ -183,7 +197,8 @@ export class CoursesController {
     return { category };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Patch(':id/categories/:categoryId')
   async updateCategory(
     @Param('id', ParseIntPipe) _courseId: number,
@@ -197,7 +212,8 @@ export class CoursesController {
     return { category };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Delete(':id/categories/:categoryId')
   async deleteCategory(
     @Param('id', ParseIntPipe) _courseId: number,
@@ -216,7 +232,8 @@ export class CoursesController {
     return { members, total: (members as Array<unknown>).length };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Patch(':id/members/:memberId/role')
   async updateMemberRole(
     @Param('id', ParseIntPipe) id: number,
@@ -231,7 +248,8 @@ export class CoursesController {
     return { member };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Delete(':id/members/:memberId')
   async removeMember(
     @Param('id', ParseIntPipe) id: number,
@@ -243,7 +261,8 @@ export class CoursesController {
 
   // ── Invitations ──────────────────────────────────────────────
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Post(':id/invitations')
   async createInvitation(
     @Param('id', ParseIntPipe) id: number,
@@ -269,7 +288,8 @@ export class CoursesController {
     };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, CourseRoleGuard)
+  @RequireCourseRole(CourseMemberRole.OWNER, CourseMemberRole.PROFESSOR)
   @Delete(':id/invitations/:invitationId')
   async revokeInvitation(
     @Param('id', ParseIntPipe) id: number,

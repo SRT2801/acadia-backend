@@ -9,6 +9,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { SessionsService } from './sessions.service';
+import { RolesGuard } from './guards/roles.guard';
 import { Session } from './entities/session.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
@@ -31,6 +32,7 @@ import { PasswordResetToken } from './entities/password-reset-token.entity';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, SessionsService],
+  providers: [AuthService, JwtStrategy, SessionsService, RolesGuard],
+  exports: [RolesGuard],
 })
 export class AuthModule {}
