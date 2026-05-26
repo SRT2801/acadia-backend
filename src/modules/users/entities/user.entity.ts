@@ -43,9 +43,11 @@ export class User {
   @Column({ nullable: true, type: 'timestamptz' })
   emailVerifiedAt?: Date;
 
+  @Exclude()
   @Column({ nullable: true })
   verificationToken?: string;
 
+  @Exclude()
   @Column({ nullable: true, type: 'timestamptz' })
   verificationTokenExpiresAt?: Date;
 
