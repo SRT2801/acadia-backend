@@ -15,11 +15,10 @@ export class CreateCourseDto {
   @MaxLength(200)
   name!: string;
 
-  @IsDefined()
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(20)
-  code!: string;
+  code?: string;
 
   @IsOptional()
   @IsString()

@@ -44,8 +44,8 @@ export class CoursesController {
   @Post()
   async create(@Body() dto: CreateCourseDto, @Req() req: Request) {
     const userId = req['user']?.userId;
-    const course = await this.coursesService.create(dto, userId);
-    return { course };
+    const result = await this.coursesService.create(dto, userId);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)

@@ -31,8 +31,10 @@ export class CoursesService {
   ) {}
 
   async create(dto: CreateCourseDto, userId: number) {
+    const code = dto.code?.trim() || this.generateCode(dto.name);
+
     const existing = await this.courseRepo.findOne({
-      where: { code: dto.code },
+      where: { code },
     });
 
     if (existing) {
@@ -41,6 +43,7 @@ export class CoursesService {
 
     const course = this.courseRepo.create({
       ...dto,
+      code,
       createdById: userId,
     });
 
@@ -70,7 +73,15 @@ export class CoursesService {
       full.academicSpace.categories = [];
     }
 
-    return full;
+    const invitation = await this.invitationRepo.save({
+      code: randomBytes(3).toString('hex').toUpperCase(),
+      courseId: saved.id,
+      createdById: userId,
+      maxUses: 0,
+      uses: 0,
+    });
+
+    return { course: full, invitation };
   }
 
   async findAll(userId: number) {
@@ -285,5 +296,17 @@ export class CoursesService {
     }
 
     await this.memberRepo.remove(member);
+  }
+
+  private generateCode(name: string): string {
+    const prefix = name
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Z]/g, '')
+      .slice(0, 4)
+      .padEnd(4, 'X');
+    const suffix = randomBytes(2).toString('hex').toUpperCase();
+    return `${prefix}-${suffix}`;
   }
 }
