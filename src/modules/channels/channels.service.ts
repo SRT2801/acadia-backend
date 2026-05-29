@@ -6,11 +6,11 @@ import { ChannelCategory } from './entities/channel-category.entity';
 import { ChannelType } from '../courses/enums/channel-type.enum';
 
 const DEFAULT_CHANNELS = [
-  { name: 'anuncios', type: ChannelType.ANNOUNCEMENT, icon: '📢' },
+  { name: 'anuncios', type: ChannelType.ANNOUNCEMENT, icon: '📣' },
   { name: 'general', type: ChannelType.TEXT, icon: '💬' },
-  { name: 'tareas', type: ChannelType.TASKS, icon: '📝' },
-  { name: 'recursos', type: ChannelType.RESOURCES, icon: '📚' },
-  { name: 'preguntas', type: ChannelType.FORUM, icon: '❓' },
+  { name: 'tareas', type: ChannelType.TASKS, icon: '📋' },
+  { name: 'recursos', type: ChannelType.RESOURCES, icon: '📁' },
+  { name: 'preguntas', type: ChannelType.FORUM, icon: '🗨️' },
 ];
 
 @Injectable()
