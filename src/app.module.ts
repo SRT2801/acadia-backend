@@ -11,6 +11,9 @@ import { UniversitiesModule } from './modules/universities/universities.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { DatabaseModule } from './core/database/database.module';
 import { MailModule } from './modules/mail/mail.module';
+import { MessagesModule } from './modules/messages/messages.module';
+import { AnnouncementsModule } from './modules/announcements/announcements.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -26,6 +29,9 @@ import { MailModule } from './modules/mail/mail.module';
     MailModule,
     AuthModule,
     CoursesModule,
+    MessagesModule,
+    AnnouncementsModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [
