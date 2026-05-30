@@ -52,6 +52,7 @@ async function seed() {
     [RolesEnum.STUDENT]: [
       PermissionsEnum.CREATE_TASK,
       PermissionsEnum.JOIN_COURSE,
+      PermissionsEnum.CREATE_MESSAGE,
     ],
     [RolesEnum.PROFESSOR]: [
       PermissionsEnum.CREATE_TASK,
@@ -63,6 +64,8 @@ async function seed() {
       PermissionsEnum.MANAGE_MEMBERS,
       PermissionsEnum.CREATE_CHANNELS,
       PermissionsEnum.DELETE_MESSAGES,
+      PermissionsEnum.CREATE_MESSAGE,
+      PermissionsEnum.EDIT_MESSAGE,
     ],
     [RolesEnum.ADMIN]: ALL_PERMISSIONS,
     [RolesEnum.MODERATOR]: [
@@ -116,7 +119,6 @@ async function seed() {
       const unicolombo = universityMap.get(UniversitiesEnum.UNICOLOMBO);
       adminUser = userRepo.create({
         email: adminEmail,
-        username: 'superadmin',
         password: hashedPassword,
         firstName: 'Super',
         lastName: 'Admin',

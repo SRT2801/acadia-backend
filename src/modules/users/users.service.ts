@@ -53,9 +53,6 @@ export class UsersService {
           if (detail.includes('email')) {
             throw new ConflictException('Email already registered');
           }
-          if (detail.includes('username')) {
-            throw new ConflictException('Username already taken');
-          }
         }
       }
       throw error;
@@ -73,10 +70,6 @@ export class UsersService {
 
   async findByEmail(email: string) {
     return this.usersRepository.findOneBy({ email });
-  }
-
-  async findByUsername(username: string) {
-    return this.usersRepository.findOneBy({ username });
   }
 
   async findByVerificationToken(verificationToken: string) {
@@ -118,9 +111,6 @@ export class UsersService {
           const detail = driverError.detail ?? '';
           if (detail.includes('email')) {
             throw new ConflictException('Email already registered');
-          }
-          if (detail.includes('username')) {
-            throw new ConflictException('Username already taken');
           }
         }
       }

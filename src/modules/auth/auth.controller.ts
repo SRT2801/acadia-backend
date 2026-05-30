@@ -14,6 +14,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiCookieAuth,
+  ApiUnauthorizedResponse,
+  ApiTooManyRequestsResponse,
+} from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LoginDto } from './dto/login.dto';
@@ -26,12 +34,19 @@ import { AuthService } from './auth.service';
 const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000;
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('register')
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiResponse({ status: 201, description: 'User registered successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiTooManyRequestsResponse({
+    description: 'Too many requests, try again later',
+  })
   async register(
     @Body() registerDto: RegisterDto,
     @Req() req: Request,
@@ -45,11 +60,17 @@ export class AuthController {
       userAgent,
     );
     this.setAuthCookies(res, accessToken, refreshToken);
-    return { user };
+    return { accessToken, user };
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
+  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiTooManyRequestsResponse({
+    description: 'Too many requests, try again later',
+  })
   async login(
     @Body() loginDto: LoginDto,
     @Req() req: Request,
@@ -63,10 +84,13 @@ export class AuthController {
       userAgent,
     );
     this.setAuthCookies(res, accessToken, refreshToken);
-    return { user };
+    return { accessToken, user };
   }
 
   @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token using refresh token cookie' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -80,11 +104,16 @@ export class AuthController {
     const { accessToken, refreshToken, user } =
       await this.authService.refresh(refreshTokenCookie);
     this.setAuthCookies(res, accessToken, refreshToken);
-    return { user };
+    return { accessToken, user };
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('accessToken')
+  @ApiOperation({ summary: 'Logout current session' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req['user'];
     const refreshTokenCookie = req.cookies?.refreshToken;
@@ -96,6 +125,9 @@ export class AuthController {
 
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify email address with token' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
     await this.authService.verifyEmail(verifyEmailDto);
     return { message: 'Email verified successfully' };
@@ -104,6 +136,11 @@ export class AuthController {
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset email' })
+  @ApiResponse({ status: 200, description: 'If email exists, reset link sent' })
+  @ApiTooManyRequestsResponse({
+    description: 'Too many requests, try again later',
+  })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     await this.authService.forgotPassword(forgotPasswordDto);
     return { message: 'If the email exists, a reset link has been sent' };
@@ -111,6 +148,9 @@ export class AuthController {
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password with token' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     await this.authService.resetPassword(resetPasswordDto);
     return { message: 'Password has been reset successfully' };
@@ -118,12 +158,20 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
+  @ApiCookieAuth('accessToken')
+  @ApiOperation({ summary: 'Get current authenticated user' })
+  @ApiResponse({ status: 200, description: 'Current user data' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   me(@Req() req: Request) {
     return req['user'];
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('sessions')
+  @ApiCookieAuth('accessToken')
+  @ApiOperation({ summary: 'Get all active sessions for current user' })
+  @ApiResponse({ status: 200, description: 'List of active sessions' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async getSessions(@Req() req: Request) {
     const user = req['user'];
     return this.authService.getActiveSessions(user.userId);
@@ -131,6 +179,10 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('sessions/:id')
+  @ApiCookieAuth('accessToken')
+  @ApiOperation({ summary: 'Revoke a specific session' })
+  @ApiResponse({ status: 200, description: 'Session revoked' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async revokeSession(
     @Req() req: Request,
     @Param('id', ParseIntPipe) sessionId: number,
@@ -142,6 +194,11 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('sessions')
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth('accessToken')
+  @ApiOperation({ summary: 'Revoke all sessions except current one' })
+  @ApiResponse({ status: 200, description: 'Other sessions revoked' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async revokeOtherSessions(@Req() req: Request) {
     const user = req['user'];
     await this.authService.revokeOtherSessions(user.userId, user.sessionId);
