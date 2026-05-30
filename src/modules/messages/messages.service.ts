@@ -1,0 +1,122 @@
+import {
+  Injectable,
+  NotFoundException,
+  forwardRef,
+  Inject,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In } from 'typeorm';
+import { Message } from './entities/message.entity';
+import { CreateMessageDto } from './dto/create-message.dto';
+import { UpdateMessageDto } from './dto/update-message.dto';
+import { ChannelsService } from '../channels/channels.service';
+import { ChannelType } from '../courses/enums/channel-type.enum';
+import { ChatGateway } from '../chat/chat.gateway';
+
+@Injectable()
+export class MessagesService {
+  constructor(
+    @InjectRepository(Message)
+    private readonly messageRepo: Repository<Message>,
+    private readonly channelsService: ChannelsService,
+    @Inject(forwardRef(() => ChatGateway))
+    private readonly chatGateway: ChatGateway,
+  ) {}
+
+  async create(
+    createMessageDto: CreateMessageDto & { userId: number },
+  ): Promise<Message> {
+    const channel = await this.channelsService.findOne(
+      createMessageDto.channelId,
+    );
+    if (!channel) {
+      throw new NotFoundException('Channel not found');
+    }
+    if (channel.type !== ChannelType.TEXT) {
+      throw new NotFoundException(
+        'Messages can only be created in TEXT channels',
+      );
+    }
+
+    const message = this.messageRepo.create({
+      content: createMessageDto.content,
+      channelId: createMessageDto.channelId,
+      userId: createMessageDto.userId,
+    });
+
+    const savedMessage = await this.messageRepo.save(message);
+    const messageWithUser = await this.messageRepo.findOne({
+      where: { id: savedMessage.id },
+      relations: ['user'],
+    });
+    this.chatGateway.emitMessageCreated(
+      createMessageDto.channelId,
+      messageWithUser,
+    );
+    return messageWithUser!;
+  }
+
+  async findByChannel(channelId: number): Promise<Message[]> {
+    return this.messageRepo.find({
+      where: { channelId },
+      relations: ['user'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async findOne(id: number): Promise<Message | null> {
+    return this.messageRepo.findOne({
+      where: { id },
+      relations: ['user', 'channel'],
+    });
+  }
+
+  async update(
+    id: number,
+    updateMessageDto: UpdateMessageDto,
+    userId: number,
+  ): Promise<Message> {
+    const message = await this.messageRepo.findOne({ where: { id } });
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+    if (message.userId !== userId) {
+      throw new NotFoundException('Not authorized to edit this message');
+    }
+
+    if (updateMessageDto.content) {
+      message.content = updateMessageDto.content;
+    }
+
+    const savedMessage = await this.messageRepo.save(message);
+    this.chatGateway.emitMessageUpdated(message.channelId, savedMessage);
+    return savedMessage;
+  }
+
+  async remove(id: number, userId: number): Promise<boolean> {
+    const message = await this.messageRepo.findOne({ where: { id } });
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+    if (message.userId !== userId) {
+      throw new NotFoundException('Not authorized to delete this message');
+    }
+
+    const channelId = message.channelId;
+    const result = await this.messageRepo.delete(id);
+    if (result.affected) {
+      this.chatGateway.emitMessageDeleted(channelId, id);
+      return true;
+    }
+    return false;
+  }
+
+  async findByChannelIds(channelIds: number[]): Promise<Message[]> {
+    if (channelIds.length === 0) return [];
+    return this.messageRepo.find({
+      where: { channelId: In(channelIds) },
+      relations: ['user'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+}
