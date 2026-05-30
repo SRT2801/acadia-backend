@@ -12,6 +12,9 @@ import { UpdateMessageDto } from './dto/update-message.dto';
 import { ChannelsService } from '../channels/channels.service';
 import { ChannelType } from '../courses/enums/channel-type.enum';
 import { ChatGateway } from '../chat/chat.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
+import { CoursesService } from '../courses/courses.service';
 
 @Injectable()
 export class MessagesService {
@@ -21,6 +24,10 @@ export class MessagesService {
     private readonly channelsService: ChannelsService,
     @Inject(forwardRef(() => ChatGateway))
     private readonly chatGateway: ChatGateway,
+    @Inject(forwardRef(() => NotificationsService))
+    private readonly notificationsService: NotificationsService,
+    @Inject(forwardRef(() => CoursesService))
+    private readonly coursesService: CoursesService,
   ) {}
 
   async create(
@@ -53,7 +60,64 @@ export class MessagesService {
       createMessageDto.channelId,
       messageWithUser,
     );
+
+    this.createMessageNotification(messageWithUser!, channel);
+
     return messageWithUser!;
+  }
+
+  private async createMessageNotification(
+    message: Message,
+    channel: any,
+  ): Promise<void> {
+    try {
+      const channelWithSpace = await this.channelsService.findOne(
+        message.channelId,
+      );
+      const academicSpace = channelWithSpace?.academicSpace;
+      if (!academicSpace) return;
+
+      const members = await this.getCourseMembers(academicSpace.courseId);
+
+      const senderName = message.user
+        ? `${message.user.firstName} ${message.user.lastName}`
+        : 'Someone';
+
+      for (const member of members) {
+        if (member.userId === message.userId) continue;
+
+        const notification = await this.notificationsService.create({
+          type: NotificationType.MESSAGE,
+          title: `Mensaje de ${senderName} en #${channel.name}`,
+          body:
+            message.content.length > 100
+              ? message.content.slice(0, 100) + '...'
+              : message.content,
+          userId: member.userId,
+          senderId: message.userId,
+          channelId: message.channelId,
+          courseId: academicSpace.courseId,
+          link: `/app/courses/${academicSpace.courseId}/channels/${message.channelId}`,
+        });
+
+        this.chatGateway.emitNotificationCreated(member.userId, {
+          ...notification,
+          senderName,
+          channelName: channel.name,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to create message notification:', error);
+    }
+  }
+
+  private async getCourseMembers(courseId: number): Promise<any[]> {
+    try {
+      const members = await this.coursesService.listMembers(courseId);
+      return members || [];
+    } catch {
+      return [];
+    }
   }
 
   async findByChannel(channelId: number): Promise<Message[]> {
