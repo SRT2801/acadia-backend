@@ -117,4 +117,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       .to(`channel:${channelId}`)
       .emit('announcement:pinned', announcement);
   }
+
+  emitNotificationCreated(userId: number, notification: any) {
+    this.server.to(`user:${userId}`).emit('notification:created', notification);
+  }
 }
