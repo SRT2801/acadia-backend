@@ -14,6 +14,7 @@ import { MailModule } from './modules/mail/mail.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ChatModule } from './modules/chat/chat.module';
     MessagesModule,
     AnnouncementsModule,
     ChatModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [
