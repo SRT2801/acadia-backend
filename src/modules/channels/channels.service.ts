@@ -52,7 +52,7 @@ export class ChannelsService {
   async findOne(channelId: number): Promise<Channel | null> {
     return this.channelRepo.findOne({
       where: { id: channelId },
-      relations: ['category'],
+      relations: ['category', 'academicSpace'],
     });
   }
 
