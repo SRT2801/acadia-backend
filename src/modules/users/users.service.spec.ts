@@ -3,10 +3,12 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
+import { University } from '../universities/entities/university.entity';
 
 describe('UsersService', () => {
   let service: UsersService;
   let repo: jest.Mocked<Repository<User>>;
+  let universityRepo: jest.Mocked<Repository<University>>;
 
   beforeEach(async () => {
     repo = {
@@ -20,10 +22,15 @@ describe('UsersService', () => {
       delete: jest.fn(),
     } as any;
 
+    universityRepo = {
+      findOne: jest.fn(),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: getRepositoryToken(User), useValue: repo },
+        { provide: getRepositoryToken(University), useValue: universityRepo },
       ],
     }).compile();
 
@@ -37,13 +44,13 @@ describe('UsersService', () => {
   it('should create a user', async () => {
     const dto = {
       email: 'test@test.com',
-      username: 'test',
       password: 'hashed',
       firstName: 'T',
       lastName: 'U',
       roleId: 1,
       universityId: 1,
     };
+    universityRepo.findOne.mockResolvedValue({ id: 1 } as any);
     repo.create.mockReturnValue(dto as any);
     repo.save.mockResolvedValue({ id: 1, ...dto } as any);
 

@@ -34,7 +34,6 @@ describe('AuthService', () => {
   const mockUser = {
     id: 1,
     email: 'test@test.com',
-    username: 'testuser',
     password: 'hashedpassword',
     firstName: 'Test',
     lastName: 'User',
@@ -71,7 +70,6 @@ describe('AuthService', () => {
   beforeEach(async () => {
     usersService = {
       findByEmail: jest.fn(),
-      findByUsername: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
       setVerificationToken: jest.fn(),
@@ -146,7 +144,6 @@ describe('AuthService', () => {
           password: 'password123',
           firstName: 'Test',
           lastName: 'User',
-          username: 'test',
           universityId: 1,
         }),
       ).rejects.toThrow(ConflictException);
@@ -162,7 +159,6 @@ describe('AuthService', () => {
           password: 'password123',
           firstName: 'Test',
           lastName: 'User',
-          username: 'test',
           universityId: 1,
         },
         '127.0.0.1',

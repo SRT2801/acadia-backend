@@ -10,7 +10,6 @@ describe('AuthController', () => {
   const mockUser = {
     id: 1,
     email: 'test@test.com',
-    username: 'testuser',
     firstName: 'Test',
     lastName: 'User',
     roleId: 1,
@@ -64,7 +63,6 @@ describe('AuthController', () => {
         password: 'password123',
         firstName: 'Test',
         lastName: 'User',
-        username: 'testuser',
         universityId: 1,
       };
 
