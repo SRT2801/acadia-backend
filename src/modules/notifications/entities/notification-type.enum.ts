@@ -1,0 +1,6 @@
+export enum NotificationType {
+  MESSAGE = 'MESSAGE',
+  ANNOUNCEMENT = 'ANNOUNCEMENT',
+  MENTION = 'MENTION',
+  INVITATION = 'INVITATION',
+}
