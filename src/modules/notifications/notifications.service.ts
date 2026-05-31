@@ -1,75 +1,84 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Notification } from './entities/notification.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { RedisNotificationsService, NotificationResponse } from './redis-notifications.service';
+
+export interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  userId: number;
+  senderId?: number;
+  senderName?: string;
+  channelId?: number;
+  channelName?: string;
+  courseId?: number;
+  link?: string;
+  isRead: boolean;
+  createdAt: Date;
+  readAt?: Date;
+}
 
 @Injectable()
 export class NotificationsService {
-  constructor(
-    @InjectRepository(Notification)
-    private readonly notificationRepo: Repository<Notification>,
-  ) {}
+  constructor(private readonly redisNotificationsService: RedisNotificationsService) {}
 
   async create(createDto: CreateNotificationDto): Promise<Notification> {
-    const notification = this.notificationRepo.create(createDto);
-    return this.notificationRepo.save(notification);
+    const result = await this.redisNotificationsService.pushNotification(createDto);
+    return {
+      id: result.id,
+      type: result.type,
+      title: result.title,
+      body: result.body,
+      userId: createDto.userId,
+      senderId: result.senderId ?? createDto.senderId,
+      senderName: result.senderName ?? createDto.senderName,
+      channelId: result.channelId ?? createDto.channelId,
+      channelName: result.channelName ?? createDto.channelName,
+      courseId: result.courseId ?? createDto.courseId,
+      link: result.link,
+      isRead: result.isRead,
+      createdAt: new Date(result.createdAt),
+    };
   }
 
   async findByUserId(userId: number, limit = 50): Promise<Notification[]> {
-    return this.notificationRepo.find({
-      where: { userId },
-      relations: ['sender'],
-      order: { createdAt: 'DESC' },
-      take: limit,
-    });
+    const notifications = await this.redisNotificationsService.getNotifications(userId, limit);
+    return notifications.map((n) => ({
+      id: n.id,
+      type: n.type,
+      title: n.title,
+      body: n.body,
+      userId,
+      senderId: n.senderId,
+      senderName: n.senderName,
+      channelId: n.channelId,
+      channelName: n.channelName,
+      courseId: n.courseId,
+      link: n.link,
+      isRead: n.isRead,
+      createdAt: new Date(n.createdAt),
+    }));
   }
 
   async getUnreadCount(userId: number): Promise<number> {
-    return this.notificationRepo.count({
-      where: { userId, isRead: false },
-    });
+    return this.redisNotificationsService.getUnreadCount(userId);
   }
 
   async markAsRead(id: number, userId: number): Promise<Notification | null> {
-    const notification = await this.notificationRepo.findOne({
-      where: { id, userId },
-    });
-    if (!notification) return null;
-
-    notification.isRead = true;
-    notification.readAt = new Date();
-    return this.notificationRepo.save(notification);
+    await this.redisNotificationsService.markAsRead(userId, String(id));
+    return null;
   }
 
   async markAllAsRead(userId: number): Promise<void> {
-    await this.notificationRepo.update(
-      { userId, isRead: false },
-      { isRead: true, readAt: new Date() },
-    );
+    await this.redisNotificationsService.markAllAsRead(userId);
   }
 
-  async markChannelNotificationsAsRead(
-    userId: number,
-    channelId: number,
-  ): Promise<void> {
-    await this.notificationRepo.update(
-      { userId, channelId, isRead: false },
-      { isRead: true, readAt: new Date() },
-    );
+  async markChannelNotificationsAsRead(userId: number, channelId: number): Promise<void> {
+    await this.redisNotificationsService.markChannelAsRead(userId, channelId);
   }
 
   async deleteOldNotifications(daysOld = 30): Promise<number> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-
-    const result = await this.notificationRepo
-      .createQueryBuilder()
-      .delete()
-      .where('createdAt < :cutoffDate', { cutoffDate })
-      .andWhere('isRead = true')
-      .execute();
-
-    return result.affected ?? 0;
+    return 0;
   }
 }
