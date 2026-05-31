@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsInt, IsString } from 'class-validator';
-import { NotificationType } from '../entities/notification.entity';
+import { NotificationType } from '../entities/notification-type.enum';
 
 export class CreateNotificationDto {
   @ApiProperty({ enum: NotificationType })
@@ -38,4 +38,14 @@ export class CreateNotificationDto {
   @IsOptional()
   @IsInt()
   courseId?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  senderName?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  channelName?: string;
 }
