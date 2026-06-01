@@ -57,7 +57,6 @@ export class AuthService {
     const user = await this.usersService.create({
       ...registerDto,
       password: hashedPassword,
-      status: registerDto.status ?? 'ACTIVE',
       roleId: 1,
     });
 
@@ -83,6 +82,10 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.emailVerifiedAt) {
+      throw new UnauthorizedException('Email not verified');
     }
 
     const passwordMatches = await bcrypt.compare(
