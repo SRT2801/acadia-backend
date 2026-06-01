@@ -22,7 +22,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesEnum } from './enums/roles.enum';
-import { PermissionsEnum } from './enums/permissions.enum';
 
 @ApiTags('Roles')
 @UseGuards(JwtAuthGuard, RolesGuard)
