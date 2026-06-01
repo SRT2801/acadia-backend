@@ -74,7 +74,7 @@ export class CoursesService {
     }
 
     const invitation = await this.invitationRepo.save({
-      code: randomBytes(3).toString('hex').toUpperCase(),
+      code: randomBytes(16).toString('hex').toUpperCase(),
       courseId: saved.id,
       createdById: userId,
       maxUses: 0,

@@ -38,6 +38,7 @@ import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { UpdateSpaceDto } from './dto/update-space.dto';
 import { ReorderChannelsDto } from './dto/reorder-channels.dto';
+import { AuthenticatedUser } from '../../types/express';
 
 @ApiTags('Courses')
 @Controller('courses')
@@ -59,8 +60,11 @@ export class CoursesController {
     description: 'Forbidden - requires MANAGE_COURSE permission',
   })
   async create(@Body() dto: CreateCourseDto, @Req() req: Request) {
-    const userId = req['user']?.userId;
-    const result = await this.coursesService.create(dto, userId);
+    const user = req['user'] as AuthenticatedUser | undefined;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    const result = await this.coursesService.create(dto, user.userId);
     return result;
   }
 
@@ -71,8 +75,11 @@ export class CoursesController {
   @ApiResponse({ status: 200, description: 'List of courses' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async findAll(@Req() req: Request) {
-    const userId = req['user']?.userId;
-    const courses = await this.coursesService.findAll(userId);
+    const user = req['user'] as AuthenticatedUser | undefined;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    const courses = await this.coursesService.findAll(user.userId);
     return { courses, total: (courses as Array<unknown>).length };
   }
 
@@ -85,8 +92,11 @@ export class CoursesController {
   @ApiResponse({ status: 404, description: 'Invitation not found or expired' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async joinByCode(@Param('code') code: string, @Req() req: Request) {
-    const userId = req['user']?.userId;
-    const course = await this.coursesService.joinByCode(code, userId);
+    const user = req['user'] as AuthenticatedUser | undefined;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    const course = await this.coursesService.joinByCode(code, user.userId);
     return { course };
   }
 
