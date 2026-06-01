@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   Min,
   MinLength,
   MaxLength,
@@ -32,6 +33,13 @@ export class RegisterDto {
   @IsNotEmpty()
   @MinLength(8)
   @MaxLength(128)
+  @Matches(
+    /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$/,
+    {
+      message:
+        'Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character (@$!%*?&)',
+    },
+  )
   password!: string;
 
   @ApiProperty({ description: 'User first name', example: 'John' })
@@ -61,15 +69,6 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   bio?: string;
-
-  @ApiPropertyOptional({
-    description: 'User status message',
-    example: 'Studying for exams',
-  })
-  @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  status?: string;
 
   @ApiPropertyOptional({ description: 'University ID', example: 1 })
   @IsOptional()
