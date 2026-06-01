@@ -29,7 +29,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getResponse()
         : { message: 'Internal server error', statusCode: httpStatus };
 
-    if (httpStatus === HttpStatus.INTERNAL_SERVER_ERROR) {
+    if (httpStatus === 500) {
       if (exception instanceof Error) {
         this.logger.error(
           `[Unhandled Exception] ${exception.message}`,
@@ -43,7 +43,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const responseBody = {
       statusCode: httpStatus,
       timestamp: new Date().toISOString(),
-      path: httpAdapter.getRequestUrl(ctx.getRequest()),
+      path: httpAdapter.getRequestUrl(ctx.getRequest()) as string,
       details:
         typeof errorResponse === 'string'
           ? { message: errorResponse }
