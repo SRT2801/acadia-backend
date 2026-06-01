@@ -134,11 +134,17 @@ describe('MessagesService', () => {
     it('should update message and emit event', async () => {
       const message = { id: 1, userId: 1, channelId: 1, content: 'Old' };
       messageRepo.findOne.mockResolvedValue(message as any);
-      messageRepo.save.mockResolvedValue({ ...message, content: 'Updated' } as any);
+      messageRepo.save.mockResolvedValue({
+        ...message,
+        content: 'Updated',
+      } as any);
 
       const result = await service.update(1, { content: 'Updated' }, 1);
 
-      expect(chatGateway.emitMessageUpdated).toHaveBeenCalledWith(1, expect.any(Object));
+      expect(chatGateway.emitMessageUpdated).toHaveBeenCalledWith(
+        1,
+        expect.any(Object),
+      );
       expect(result.content).toBe('Updated');
     });
   });

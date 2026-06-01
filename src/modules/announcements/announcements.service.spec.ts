@@ -2,7 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AnnouncementsService } from './announcements.service';
-import { Announcement, AnnouncementPriority } from './entities/announcement.entity';
+import {
+  Announcement,
+  AnnouncementPriority,
+} from './entities/announcement.entity';
 import { ChannelsService } from '../channels/channels.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { ChannelType } from '../courses/enums/channel-type.enum';
@@ -37,7 +40,10 @@ describe('AnnouncementsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AnnouncementsService,
-        { provide: getRepositoryToken(Announcement), useValue: announcementRepo },
+        {
+          provide: getRepositoryToken(Announcement),
+          useValue: announcementRepo,
+        },
         { provide: ChannelsService, useValue: channelsService },
         { provide: ChatGateway, useValue: chatGateway },
       ],
@@ -104,7 +110,10 @@ describe('AnnouncementsService', () => {
 
       expect(announcementRepo.create).toHaveBeenCalled();
       expect(announcementRepo.save).toHaveBeenCalled();
-      expect(chatGateway.emitAnnouncementCreated).toHaveBeenCalledWith(1, announcement);
+      expect(chatGateway.emitAnnouncementCreated).toHaveBeenCalledWith(
+        1,
+        announcement,
+      );
       expect(result).toEqual(announcement);
     });
   });
@@ -129,9 +138,9 @@ describe('AnnouncementsService', () => {
     it('should throw NotFoundException if announcement not found', async () => {
       announcementRepo.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.update(1, { title: 'Updated' }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update(1, { title: 'Updated' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should update announcement and emit event', async () => {
@@ -144,11 +153,17 @@ describe('AnnouncementsService', () => {
         channelId: 1,
       };
       announcementRepo.findOne.mockResolvedValue(announcement as any);
-      announcementRepo.save.mockResolvedValue({ ...announcement, title: 'Updated' } as any);
+      announcementRepo.save.mockResolvedValue({
+        ...announcement,
+        title: 'Updated',
+      } as any);
 
       const result = await service.update(1, { title: 'Updated' });
 
-      expect(chatGateway.emitAnnouncementUpdated).toHaveBeenCalledWith(1, expect.any(Object));
+      expect(chatGateway.emitAnnouncementUpdated).toHaveBeenCalledWith(
+        1,
+        expect.any(Object),
+      );
       expect(result.title).toBe('Updated');
     });
   });
@@ -157,11 +172,17 @@ describe('AnnouncementsService', () => {
     it('should toggle pin status and emit event', async () => {
       const announcement = { id: 1, pinned: false, channelId: 1 };
       announcementRepo.findOne.mockResolvedValue(announcement as any);
-      announcementRepo.save.mockResolvedValue({ ...announcement, pinned: true } as any);
+      announcementRepo.save.mockResolvedValue({
+        ...announcement,
+        pinned: true,
+      } as any);
 
       const result = await service.togglePin(1);
 
-      expect(chatGateway.emitAnnouncementPinned).toHaveBeenCalledWith(1, expect.any(Object));
+      expect(chatGateway.emitAnnouncementPinned).toHaveBeenCalledWith(
+        1,
+        expect.any(Object),
+      );
       expect(result.pinned).toBe(true);
     });
   });
