@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -70,8 +71,8 @@ export class UniversitiesController {
   @ApiParam({ name: 'id', type: 'number', description: 'University ID' })
   @ApiResponse({ status: 200, description: 'University data' })
   @ApiResponse({ status: 404, description: 'University not found' })
-  findOne(@Param('id') id: string) {
-    return this.universitiesService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.universitiesService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -85,10 +86,10 @@ export class UniversitiesController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - requires ADMIN role' })
   update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUniversityDto: UpdateUniversityDto,
   ) {
-    return this.universitiesService.update(+id, updateUniversityDto);
+    return this.universitiesService.update(id, updateUniversityDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -101,7 +102,7 @@ export class UniversitiesController {
   @ApiResponse({ status: 404, description: 'University not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - requires ADMIN role' })
-  remove(@Param('id') id: string) {
-    return this.universitiesService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.universitiesService.remove(id);
   }
 }
