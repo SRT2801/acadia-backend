@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,6 +25,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesEnum } from '../roles/enums/roles.enum';
+import { AuthenticatedUser } from '../../types/express';
 
 @ApiTags('Announcements')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -48,26 +50,26 @@ export class AnnouncementsController {
     @Body() createAnnouncementDto: CreateAnnouncementDto,
     @Req() req: Request,
   ) {
-    const userId = req['user'].userId;
+    const user = req['user'];
     return this.announcementsService.create({
       ...createAnnouncementDto,
-      userId,
+      userId: user.userId,
     });
   }
 
   @Get('channel/:channelId')
   @ApiOperation({ summary: 'Get all announcements in a channel' })
   @ApiResponse({ status: 200, description: 'List of announcements' })
-  async findByChannel(@Param('channelId') channelId: string) {
-    return this.announcementsService.findByChannel(+channelId);
+  async findByChannel(@Param('channelId', ParseIntPipe) channelId: number) {
+    return this.announcementsService.findByChannel(channelId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get an announcement by ID' })
   @ApiResponse({ status: 200, description: 'Announcement data' })
   @ApiResponse({ status: 404, description: 'Announcement not found' })
-  async findOne(@Param('id') id: string) {
-    return this.announcementsService.findOne(+id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.announcementsService.findOne(id);
   }
 
   @Roles(RolesEnum.PROFESSOR, RolesEnum.ADMIN)
@@ -79,10 +81,10 @@ export class AnnouncementsController {
   })
   @ApiResponse({ status: 404, description: 'Announcement not found' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateAnnouncementDto: UpdateAnnouncementDto,
   ) {
-    return this.announcementsService.update(+id, updateAnnouncementDto);
+    return this.announcementsService.update(id, updateAnnouncementDto);
   }
 
   @Roles(RolesEnum.PROFESSOR, RolesEnum.ADMIN)
@@ -90,8 +92,8 @@ export class AnnouncementsController {
   @ApiOperation({ summary: 'Toggle pin status (Professor/Admin only)' })
   @ApiResponse({ status: 200, description: 'Pin status toggled' })
   @ApiResponse({ status: 404, description: 'Announcement not found' })
-  async togglePin(@Param('id') id: string) {
-    return this.announcementsService.togglePin(+id);
+  async togglePin(@Param('id', ParseIntPipe) id: number) {
+    return this.announcementsService.togglePin(id);
   }
 
   @Roles(RolesEnum.PROFESSOR, RolesEnum.ADMIN)
@@ -102,7 +104,7 @@ export class AnnouncementsController {
     description: 'Announcement deleted successfully',
   })
   @ApiResponse({ status: 404, description: 'Announcement not found' })
-  async remove(@Param('id') id: string) {
-    return this.announcementsService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return this.announcementsService.remove(id);
   }
 }

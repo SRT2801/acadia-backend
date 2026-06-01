@@ -7,6 +7,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { AnnouncementPriority } from '../entities/announcement.entity';
@@ -19,6 +20,7 @@ export class CreateAnnouncementDto {
   @IsDefined()
   @IsString()
   @IsNotEmpty()
+  @MaxLength(200)
   title!: string;
 
   @ApiProperty({
@@ -28,6 +30,7 @@ export class CreateAnnouncementDto {
   @IsDefined()
   @IsString()
   @IsNotEmpty()
+  @MaxLength(20000)
   content!: string;
 
   @ApiPropertyOptional({
