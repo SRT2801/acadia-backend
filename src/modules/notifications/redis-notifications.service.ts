@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 
-const INTERNAL_API_KEY = 'acadia-internal-secret-key-2026';
+export class NotificationsConfig {
+  static readonly INTERNAL_API_KEY =
+    process.env.INTERNAL_API_KEY ?? 'acadia-internal-secret-key-2026';
+}
 
 export interface NotificationResponse {
   success: boolean;
@@ -38,7 +41,7 @@ export class RedisNotificationsService {
 
   constructor(private readonly configService: ConfigService) {
     const host = this.configService.get<string>('REDIS_HOST', 'localhost');
-    const port = this.configService.get<number>('REDIS_HTTP_PORT', 4001);
+    const port = this.configService.get<number>('REDIS_HTTP_PORT', 4002);
     this.redisUrl = `http://${host}:${port}`;
   }
 
@@ -52,13 +55,17 @@ export class RedisNotificationsService {
     });
 
     if (!response.ok) {
-      throw new Error(`Redis request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Redis request failed: ${response.status} ${response.statusText}`,
+      );
     }
 
     return response.json();
   }
 
-  async pushNotification(dto: CreateNotificationDto): Promise<NotificationResponse['notification']> {
+  async pushNotification(
+    dto: CreateNotificationDto,
+  ): Promise<NotificationResponse['notification']> {
     try {
       const payload = {
         userId: dto.userId,
@@ -84,31 +91,38 @@ export class RedisNotificationsService {
           method: 'POST',
           body: JSON.stringify(payload),
           headers: {
-            'x-internal-api-key': INTERNAL_API_KEY,
+            'x-internal-api-key': NotificationsConfig.INTERNAL_API_KEY,
           },
         },
       );
 
       return response.notification;
     } catch (error) {
-      this.logger.error(`Failed to push notification to Redis: ${error.message}`);
+      this.logger.error(
+        `Failed to push notification to Redis: ${error.message}`,
+      );
       throw error;
     }
   }
 
-  async getNotifications(userId: number, limit = 50): Promise<NotificationResponse['notification'][]> {
+  async getNotifications(
+    userId: number,
+    limit = 50,
+  ): Promise<NotificationResponse['notification'][]> {
     try {
-      const response = await this.request<{ notifications: NotificationResponse['notification'][]; total: number }>(
-        `${this.redisUrl}/notifications/internal/${userId}?limit=${limit}`,
-        {
-          headers: {
-            'x-internal-api-key': INTERNAL_API_KEY,
-          },
+      const response = await this.request<{
+        notifications: NotificationResponse['notification'][];
+        total: number;
+      }>(`${this.redisUrl}/notifications/internal/${userId}?limit=${limit}`, {
+        headers: {
+          'x-internal-api-key': NotificationsConfig.INTERNAL_API_KEY,
         },
-      );
+      });
       return response.notifications;
     } catch (error) {
-      this.logger.error(`Failed to get notifications from Redis: ${error.message}`);
+      this.logger.error(
+        `Failed to get notifications from Redis: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -119,13 +133,15 @@ export class RedisNotificationsService {
         `${this.redisUrl}/notifications/internal/${userId}/unread-count`,
         {
           headers: {
-            'x-internal-api-key': INTERNAL_API_KEY,
+            'x-internal-api-key': NotificationsConfig.INTERNAL_API_KEY,
           },
         },
       );
       return response.count;
     } catch (error) {
-      this.logger.error(`Failed to get unread count from Redis: ${error.message}`);
+      this.logger.error(
+        `Failed to get unread count from Redis: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -137,12 +153,14 @@ export class RedisNotificationsService {
         {
           method: 'PATCH',
           headers: {
-            'x-internal-api-key': INTERNAL_API_KEY,
+            'x-internal-api-key': NotificationsConfig.INTERNAL_API_KEY,
           },
         },
       );
     } catch (error) {
-      this.logger.error(`Failed to mark notification as read in Redis: ${error.message}`);
+      this.logger.error(
+        `Failed to mark notification as read in Redis: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -154,12 +172,14 @@ export class RedisNotificationsService {
         {
           method: 'PATCH',
           headers: {
-            'x-internal-api-key': INTERNAL_API_KEY,
+            'x-internal-api-key': NotificationsConfig.INTERNAL_API_KEY,
           },
         },
       );
     } catch (error) {
-      this.logger.error(`Failed to mark all notifications as read in Redis: ${error.message}`);
+      this.logger.error(
+        `Failed to mark all notifications as read in Redis: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -171,12 +191,14 @@ export class RedisNotificationsService {
         {
           method: 'PATCH',
           headers: {
-            'x-internal-api-key': INTERNAL_API_KEY,
+            'x-internal-api-key': NotificationsConfig.INTERNAL_API_KEY,
           },
         },
       );
     } catch (error) {
-      this.logger.error(`Failed to mark channel notifications as read in Redis: ${error.message}`);
+      this.logger.error(
+        `Failed to mark channel notifications as read in Redis: ${error.message}`,
+      );
       throw error;
     }
   }
