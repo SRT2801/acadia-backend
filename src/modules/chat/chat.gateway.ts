@@ -20,7 +20,7 @@ interface AuthenticatedSocket extends Socket {
 @WebSocketGateway({
   namespace: '/chat',
   cors: {
-    origin: '*',
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:4200',
     credentials: true,
   },
 })
@@ -36,27 +36,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: AuthenticatedSocket) {
     try {
       const token =
-        client.handshake.auth?.token || client.handshake.query?.token;
+        (client.handshake.auth as Record<string, string>)?.token ||
+        (client.handshake.query as Record<string, string>)?.token;
       if (!token) {
         client.disconnect();
         return;
       }
 
-      const payload = await this.jwtService.verifyAsync(token as string, {
-        secret: this.configService.get<string>('JWT_SECRET'),
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get<string>('JWT_SECRET') ?? '',
       });
 
-      client.userId = payload.userId;
-      client.universityId = payload.universityId;
-      client.roleId = payload.roleId;
+      client.userId = payload.userId as number;
+      client.universityId = payload.universityId as number;
+      client.roleId = payload.roleId as number;
 
-      client.join(`user:${payload.userId}`);
+      client.join(`user:${payload.userId as number}`);
     } catch {
       client.disconnect();
     }
   }
 
-  handleDisconnect(client: AuthenticatedSocket) {
+  handleDisconnect(_client: AuthenticatedSocket) {
     // Cleanup if needed
   }
 
