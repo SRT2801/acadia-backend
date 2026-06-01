@@ -16,12 +16,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => {
-          return request?.cookies?.accessToken;
+        (request: Request): string | null => {
+          return (
+            (request?.cookies as Record<string, string> | undefined)
+              ?.accessToken ?? null
+          );
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      secretOrKey: configService.get<string>('JWT_SECRET') ?? '',
     });
   }
 
@@ -40,7 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       ...payload,
       roleName: role.name,
-      permissions: permissions,
+      permissions,
     };
   }
 }
