@@ -1,11 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDefined, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import {
+  IsDefined,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateMessageDto {
   @ApiProperty({ description: 'Message content', example: 'Hello everyone!' })
   @IsDefined()
   @IsString()
   @IsNotEmpty()
+  @MaxLength(10000)
   content!: string;
 
   @ApiProperty({ description: 'Channel ID', minimum: 1, example: 1 })

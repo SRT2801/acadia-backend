@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,7 +22,7 @@ import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-
+import { AuthenticatedUser } from '../../types/express';
 
 @ApiTags('Messages')
 @UseGuards(JwtAuthGuard)
@@ -42,23 +43,26 @@ export class MessagesController {
     @Body() createMessageDto: CreateMessageDto,
     @Req() req: Request,
   ) {
-    const userId = req['user'].userId;
-    return this.messagesService.create({ ...createMessageDto, userId });
+    const user = req['user'];
+    return this.messagesService.create({
+      ...createMessageDto,
+      userId: user.userId,
+    });
   }
 
   @Get('channel/:channelId')
   @ApiOperation({ summary: 'Get all messages in a channel' })
   @ApiResponse({ status: 200, description: 'List of messages' })
-  async findByChannel(@Param('channelId') channelId: string) {
-    return this.messagesService.findByChannel(+channelId);
+  async findByChannel(@Param('channelId', ParseIntPipe) channelId: number) {
+    return this.messagesService.findByChannel(channelId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a message by ID' })
   @ApiResponse({ status: 200, description: 'Message data' })
   @ApiResponse({ status: 404, description: 'Message not found' })
-  async findOne(@Param('id') id: string) {
-    return this.messagesService.findOne(+id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.messagesService.findOne(id);
   }
 
   @Patch(':id')
@@ -69,12 +73,12 @@ export class MessagesController {
     description: 'Message not found or not authorized',
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateMessageDto: UpdateMessageDto,
     @Req() req: Request,
   ) {
-    const userId = req['user'].userId;
-    return this.messagesService.update(+id, updateMessageDto, userId);
+    const user = req['user'];
+    return this.messagesService.update(id, updateMessageDto, user.userId);
   }
 
   @Delete(':id')
@@ -84,8 +88,8 @@ export class MessagesController {
     status: 404,
     description: 'Message not found or not authorized',
   })
-  async remove(@Param('id') id: string, @Req() req: Request) {
-    const userId = req['user'].userId;
-    return this.messagesService.remove(+id, userId);
+  async remove(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+    const user = req['user'];
+    return this.messagesService.remove(id, user.userId);
   }
 }
