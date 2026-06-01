@@ -59,13 +59,13 @@ export class MailService {
           error instanceof Error ? error.message : error,
         );
         this.logger.log(`[EMAIL FALLBACK] To: ${to} | Subject: ${subject}`);
-        this.logger.log(`[EMAIL FALLBACK] HTML: ${html}`);
+        this.logger.log(`[EMAIL FALLBACK] Body: (token redacted for security)`);
       }
       return;
     }
 
     this.logger.log(`[EMAIL TO ${to}] Subject: ${subject}`);
-    this.logger.log(`[EMAIL BODY] ${html}`);
+    this.logger.log(`[EMAIL BODY] (token redacted for security)`);
   }
 
   async sendPasswordResetEmail(to: string, resetToken: string): Promise<void> {
