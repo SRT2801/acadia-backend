@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Controller,
+  DefaultValuePipe,
   Get,
   Post,
   Body,
@@ -9,6 +10,8 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -26,6 +29,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesEnum } from '../roles/enums/roles.enum';
+import { AuthenticatedUser } from '../../types/express';
 
 @ApiTags('Users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -62,8 +66,11 @@ export class UsersController {
   @ApiForbiddenResponse({
     description: 'Forbidden - requires ADMIN or PROFESSOR role',
   })
-  findAll() {
-    return this.usersService.findAll();
+  findAll(
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+  ) {
+    return this.usersService.findAll(limit, offset);
   }
 
   @Patch('me')
@@ -73,12 +80,12 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   updateProfile(@Req() req: Request, @Body() updateProfileDto: UpdateUserDto) {
-    const currentUserId = req['user'].userId;
+    const user = req['user'];
 
-    delete updateProfileDto.roleId;
-    delete updateProfileDto.status;
+    delete (updateProfileDto as Record<string, unknown>).roleId;
+    delete (updateProfileDto as Record<string, unknown>).status;
 
-    return this.usersService.update(currentUserId, updateProfileDto);
+    return this.usersService.update(user.userId, updateProfileDto);
   }
 
   @Get(':id')
@@ -87,8 +94,9 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User data' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  @Roles(RolesEnum.ADMIN, RolesEnum.PROFESSOR)
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.findOne(id);
   }
 
   @Roles(RolesEnum.ADMIN)
@@ -99,8 +107,11 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - requires ADMIN role' })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(id, updateUserDto);
   }
 
   @Roles(RolesEnum.ADMIN)
@@ -111,7 +122,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden - requires ADMIN role' })
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.remove(id);
   }
 }

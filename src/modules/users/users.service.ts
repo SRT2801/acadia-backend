@@ -59,8 +59,11 @@ export class UsersService {
     }
   }
 
-  async findAll() {
-    return await this.usersRepository.find();
+  async findAll(limit = 20, offset = 0) {
+    return await this.usersRepository.find({
+      take: Math.min(limit, 100),
+      skip: offset,
+    });
   }
 
   async findOne(id: number) {
