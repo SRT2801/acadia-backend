@@ -6,6 +6,8 @@ import {
   UseGuards,
   Req,
   Query,
+  ParseIntPipe,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,6 +20,7 @@ import {
 import type { Request } from 'express';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthenticatedUser } from '../../types/express';
 
 @ApiTags('Notifications')
 @UseGuards(JwtAuthGuard)
@@ -31,17 +34,23 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Get user notifications' })
   @ApiResponse({ status: 200, description: 'List of notifications' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  async findAll(@Req() req: Request, @Query('limit') limit?: string) {
-    const userId = req['user'].userId;
-    return this.notificationsService.findByUserId(userId, limit ? +limit : 50);
+  async findAll(
+    @Req() req: Request,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+  ) {
+    const user = req['user'];
+    return this.notificationsService.findByUserId(
+      user.userId,
+      Math.min(limit, 100),
+    );
   }
 
   @Get('unread-count')
   @ApiOperation({ summary: 'Get unread notification count' })
   @ApiResponse({ status: 200, description: 'Unread count' })
   async getUnreadCount(@Req() req: Request) {
-    const userId = req['user'].userId;
-    const count = await this.notificationsService.getUnreadCount(userId);
+    const user = req['user'];
+    const count = await this.notificationsService.getUnreadCount(user.userId);
     return { count };
   }
 
@@ -49,8 +58,8 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Mark all notifications as read' })
   @ApiResponse({ status: 200, description: 'All notifications marked as read' })
   async markAllAsRead(@Req() req: Request) {
-    const userId = req['user'].userId;
-    await this.notificationsService.markAllAsRead(userId);
+    const user = req['user'];
+    await this.notificationsService.markAllAsRead(user.userId);
     return { success: true };
   }
 
@@ -58,18 +67,30 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Mark notification as read' })
   @ApiResponse({ status: 200, description: 'Notification marked as read' })
   @ApiResponse({ status: 404, description: 'Notification not found' })
-  async markAsRead(@Param('id') id: string, @Req() req: Request) {
-    const userId = req['user'].userId;
-    const notification = await this.notificationsService.markAsRead(+id, userId);
+  async markAsRead(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+    const user = req['user'];
+    const notification = await this.notificationsService.markAsRead(
+      id,
+      user.userId,
+    );
     return { notification };
   }
 
   @Patch('channel/:channelId/read')
   @ApiOperation({ summary: 'Mark all notifications for a channel as read' })
-  @ApiResponse({ status: 200, description: 'Channel notifications marked as read' })
-  async markChannelAsRead(@Param('channelId') channelId: string, @Req() req: Request) {
-    const userId = req['user'].userId;
-    await this.notificationsService.markChannelNotificationsAsRead(userId, +channelId);
+  @ApiResponse({
+    status: 200,
+    description: 'Channel notifications marked as read',
+  })
+  async markChannelAsRead(
+    @Param('channelId', ParseIntPipe) channelId: number,
+    @Req() req: Request,
+  ) {
+    const user = req['user'];
+    await this.notificationsService.markChannelNotificationsAsRead(
+      user.userId,
+      channelId,
+    );
     return { success: true };
   }
 }

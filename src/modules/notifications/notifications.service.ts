@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { RedisNotificationsService, NotificationResponse } from './redis-notifications.service';
+import { RedisNotificationsService } from './redis-notifications.service';
 
 export interface Notification {
   id: string;
@@ -21,10 +21,13 @@ export interface Notification {
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly redisNotificationsService: RedisNotificationsService) {}
+  constructor(
+    private readonly redisNotificationsService: RedisNotificationsService,
+  ) {}
 
   async create(createDto: CreateNotificationDto): Promise<Notification> {
-    const result = await this.redisNotificationsService.pushNotification(createDto);
+    const result =
+      await this.redisNotificationsService.pushNotification(createDto);
     return {
       id: result.id,
       type: result.type,
@@ -43,7 +46,10 @@ export class NotificationsService {
   }
 
   async findByUserId(userId: number, limit = 50): Promise<Notification[]> {
-    const notifications = await this.redisNotificationsService.getNotifications(userId, limit);
+    const notifications = await this.redisNotificationsService.getNotifications(
+      userId,
+      limit,
+    );
     return notifications.map((n) => ({
       id: n.id,
       type: n.type,
@@ -74,11 +80,14 @@ export class NotificationsService {
     await this.redisNotificationsService.markAllAsRead(userId);
   }
 
-  async markChannelNotificationsAsRead(userId: number, channelId: number): Promise<void> {
+  async markChannelNotificationsAsRead(
+    userId: number,
+    channelId: number,
+  ): Promise<void> {
     await this.redisNotificationsService.markChannelAsRead(userId, channelId);
   }
 
-  async deleteOldNotifications(daysOld = 30): Promise<number> {
+  async deleteOldNotifications(_daysOld = 30): Promise<number> {
     return 0;
   }
 }
