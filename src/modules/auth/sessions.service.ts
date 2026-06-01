@@ -14,13 +14,11 @@ export class SessionsService {
     userId: number;
     ipAddress?: string;
     userAgent?: string;
-    deviceName?: string;
   }) {
     const session = this.sessionRepo.create({
       userId: data.userId,
       ipAddress: data.ipAddress,
       userAgent: data.userAgent,
-      deviceName: data.deviceName,
       lastActiveAt: new Date(),
     });
     return this.sessionRepo.save(session);

@@ -21,9 +21,6 @@ export class Session {
   @Column({ nullable: true, type: 'text' })
   userAgent?: string;
 
-  @Column({ nullable: true })
-  deviceName?: string;
-
   @Column()
   lastActiveAt!: Date;
 
