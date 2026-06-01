@@ -30,6 +30,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { AuthService } from './auth.service';
+import { AuthenticatedUser } from '../../types/express';
 
 const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000;
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
@@ -52,7 +53,10 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const ipAddress = req.ip;
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string | undefined)
+        ?.split(',')[0]
+        ?.trim() ?? req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
     const { accessToken, refreshToken, user } = await this.authService.register(
       registerDto,
@@ -76,7 +80,10 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const ipAddress = req.ip;
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string | undefined)
+        ?.split(',')[0]
+        ?.trim() ?? req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
     const { accessToken, refreshToken, user } = await this.authService.login(
       loginDto,
@@ -95,7 +102,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshTokenCookie = req.cookies?.refreshToken;
+    const refreshTokenCookie = req.cookies?.refreshToken as string | undefined;
 
     if (!refreshTokenCookie) {
       throw new UnauthorizedException('Refresh token not provided');
@@ -116,18 +123,22 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req['user'];
-    const refreshTokenCookie = req.cookies?.refreshToken;
+    const refreshTokenCookie = req.cookies?.refreshToken as string | undefined;
     await this.authService.logout(user.sessionId, refreshTokenCookie);
-    res.clearCookie('accessToken', { path: '/' });
-    res.clearCookie('refreshToken', { path: '/auth' });
+    res.clearCookie('accessToken', { path: '/', httpOnly: true });
+    res.clearCookie('refreshToken', { path: '/auth', httpOnly: true });
     return { message: 'Logged out successfully' };
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify email address with token' })
   @ApiResponse({ status: 200, description: 'Email verified successfully' })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiTooManyRequestsResponse({
+    description: 'Too many requests, try again later',
+  })
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
     await this.authService.verifyEmail(verifyEmailDto);
     return { message: 'Email verified successfully' };
@@ -146,11 +157,15 @@ export class AuthController {
     return { message: 'If the email exists, a reset link has been sent' };
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password with token' })
   @ApiResponse({ status: 200, description: 'Password reset successfully' })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiTooManyRequestsResponse({
+    description: 'Too many requests, try again later',
+  })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     await this.authService.resetPassword(resetPasswordDto);
     return { message: 'Password has been reset successfully' };
