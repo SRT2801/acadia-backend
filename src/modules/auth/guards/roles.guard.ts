@@ -1,9 +1,16 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { RolesEnum } from '../../roles/enums/roles.enum';
 import { PermissionsEnum } from '../../roles/enums/permissions.enum';
+
+interface AuthenticatedUser {
+  userId: number;
+  roleName: string;
+  permissions: PermissionsEnum[];
+}
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -23,15 +30,16 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request>();
+    const user = request['user'] as AuthenticatedUser | undefined;
 
     if (!user) {
-      return false; // El usuario no está autenticado, debería fallar
+      return false;
     }
 
     let hasRole = true;
     if (requiredRoles) {
-      hasRole = requiredRoles.includes(user.roleName);
+      hasRole = requiredRoles.includes(user.roleName as RolesEnum);
     }
 
     let hasPermission = true;
